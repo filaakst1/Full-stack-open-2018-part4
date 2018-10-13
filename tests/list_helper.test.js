@@ -52,6 +52,17 @@ const blogs = [
   }
 ]
 
+const listWithOneBlog = [
+  {
+    _id: '5a422aa71b54a676234d17f8',
+    title: 'Go To Statement Considered Harmful',
+    author: 'Edsger W. Dijkstra',
+    url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
+    likes: 5,
+    __v: 0
+  }
+]
+
 test('dummy is called', () => {
   const blogs = []
 
@@ -60,17 +71,6 @@ test('dummy is called', () => {
 })
 
 describe('total likes', () => {
-  const listWithOneBlog = [
-    {
-      _id: '5a422aa71b54a676234d17f8',
-      title: 'Go To Statement Considered Harmful',
-      author: 'Edsger W. Dijkstra',
-      url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
-      likes: 5,
-      __v: 0
-    }
-  ]
-
   test('when list has only one blog equals the likes of that', () => {
     const result = listHelper.totalLikes(listWithOneBlog)
     expect(result).toBe(5)
@@ -91,16 +91,6 @@ describe('total likes', () => {
 
 
 describe('favorite blog', () => {
-  const listWithOneBlog = [
-    {
-      _id: '5a422aa71b54a676234d17f8',
-      title: 'Go To Statement Considered Harmful',
-      author: 'Edsger W. Dijkstra',
-      url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
-      likes: 5,
-      __v: 0
-    }
-  ]
 
   test('when list has only one blog equals the likes of that', () => {
     const result = listHelper.favoriteBlog(listWithOneBlog)
@@ -138,6 +128,43 @@ describe('favorite blog', () => {
       title: 'Canonical string reduction',
       author: 'Edsger W. Dijkstra',
       likes: 12
+    })
+  })
+})
+
+
+describe('most blogs', () => {
+  test('when list has only one blog equals the likes of that', () => {
+    const result = listHelper.mostBlogs(listWithOneBlog)
+    expect(result).toEqual({
+      author: 'Edsger W. Dijkstra',
+      blogs: 1
+    })
+  })
+  test('a bigger list returns correct value', () => {
+    const result = listHelper.mostBlogs(blogs)
+    expect(result).toEqual({
+      author: 'Robert C. Martin',
+      blogs: 3
+    })
+  })
+  test('empty list returns undefined', () => {
+    const result = listHelper.mostBlogs([])
+    expect(result).toBeUndefined()
+  })
+  test('no argument returns undefined', () => {
+    const result = listHelper.mostBlogs()
+    expect(result).toBeUndefined()
+  })
+
+  const additional = blogs.concat([{
+    author: 'Edsger W. Dijkstra',
+  }])
+  test('equal likes return the first occurance', () => {
+    const result = listHelper.mostBlogs(additional)
+    expect(result).toEqual({
+      author: 'Edsger W. Dijkstra',
+      blogs: 3
     })
   })
 })
