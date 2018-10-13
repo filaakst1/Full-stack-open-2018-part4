@@ -3,6 +3,14 @@ const dummy = (blogs) => {
   return 1
 }
 
+const totalLikes = (blogs) => {
+  const reducer = (accumulator, currentValue) => accumulator + currentValue
+  if(blogs) {
+    return blogs.map(blog => blog.likes).reduce(reducer,0)
+  }
+  return 0
+}
+
 module.exports = {
-  dummy
+  dummy, totalLikes
 }
