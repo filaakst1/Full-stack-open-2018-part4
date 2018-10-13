@@ -1,13 +1,21 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 
-
-
+// Output formatting
+const formatBlog = (blog) => {
+  return {
+    id: blog._id,
+    title: blog.title,
+    author: blog.author,
+    url: blog.url,
+    likes: blog.likes
+  }
+}
 blogsRouter.get('/', (request, response) => {
   Blog
     .find({})
     .then(blogs => {
-      response.json(blogs)
+      response.json(blogs.map(formatBlog))
     })
 })
 
@@ -16,8 +24,9 @@ blogsRouter.post('/', (request, response) => {
 
   blog
     .save()
-    .then(result => {
-      response.status(201).json(result)
+    .then(formatBlog)
+    .then(formattedResult => {
+      response.status(201).json(formattedResult)
     })
 })
 
