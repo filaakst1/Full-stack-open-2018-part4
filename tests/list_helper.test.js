@@ -118,9 +118,8 @@ describe('favorite blog', () => {
   })
 
   const additional = blogs.concat({
-    title: 'Type wars',
     author: 'Robert C. Martin',
-    likes: 2,
+    likes: 5,
   })
   test('equal likes return the first occurance', () => {
     const result = listHelper.favoriteBlog(additional)
@@ -165,6 +164,43 @@ describe('most blogs', () => {
     expect(result).toEqual({
       author: 'Edsger W. Dijkstra',
       blogs: 3
+    })
+  })
+})
+
+describe('most likes', () => {
+  test('when list has only one blog equals the likes of that', () => {
+    const result = listHelper.mostLikes(listWithOneBlog)
+    expect(result).toEqual({
+      author: 'Edsger W. Dijkstra',
+      likes: 5
+    })
+  })
+  test('a bigger list returns correct value', () => {
+    const result = listHelper.mostLikes(blogs)
+    expect(result).toEqual({
+      author: 'Edsger W. Dijkstra',
+      likes: 17
+    })
+  })
+  test('empty list returns undefined', () => {
+    const result = listHelper.mostLikes([])
+    expect(result).toBeUndefined()
+  })
+  test('no argument returns undefined', () => {
+    const result = listHelper.mostLikes()
+    expect(result).toBeUndefined()
+  })
+
+  const additional = blogs.concat([{
+    author: 'Michael Chan',
+    likes: 10
+  }])
+  test('equal likes return the first occurance', () => {
+    const result = listHelper.mostLikes(additional)
+    expect(result).toEqual({
+      author: 'Michael Chan',
+      likes: 17
     })
   })
 })

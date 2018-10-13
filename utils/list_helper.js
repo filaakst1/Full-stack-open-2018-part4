@@ -11,7 +11,6 @@ const totalLikes = (blogs) => {
   return 0
 }
 
-
 const favoriteBlog = (blogs) => {
   if(blogs) {
     if(blogs.length === 0 ) {
@@ -55,6 +54,31 @@ const mostBlogs = (blogs) => {
   }
   return undefined
 }
+
+const mostLikes = (blogs) => {
+  if(blogs) {
+    if(blogs.length === 0 ) {
+      return undefined
+    }
+    let blogAmountMap = []
+    blogs.forEach(blog => {
+      const index = blogAmountMap.map(mapItem => mapItem.author).indexOf(blog.author)
+      if(index !== -1 ){
+        blogAmountMap[index].likes += blog.likes
+      }else {
+        const newEntry = {
+          author: blog.author,
+          likes: blog.likes
+        }
+        blogAmountMap= blogAmountMap.concat(newEntry)
+      }
+    })
+    return blogAmountMap.reduce((a,b) => a.likes >= b.likes ? a: b)
+
+  }
+  return undefined
+}
+
 module.exports = {
-  dummy, totalLikes, favoriteBlog, mostBlogs
+  dummy, totalLikes, favoriteBlog, mostBlogs,mostLikes
 }
