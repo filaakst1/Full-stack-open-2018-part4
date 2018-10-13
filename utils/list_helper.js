@@ -11,6 +11,26 @@ const totalLikes = (blogs) => {
   return 0
 }
 
+
+const favoriteBlog = (blogs) => {
+  if(blogs) {
+    if(blogs.length === 0 ) {
+      return undefined
+    }
+    const reducer = (accumulator, currentValue) => accumulator.likes >= currentValue.likes ? accumulator : currentValue
+
+    const mapper = (blog) => {
+      return {
+        title: blog.title,
+        author: blog.author,
+        likes: blog.likes
+      }
+    }
+    return blogs.map(mapper).reduce(reducer)
+  }
+  return undefined
+}
+
 module.exports = {
-  dummy, totalLikes
+  dummy, totalLikes,favoriteBlog
 }

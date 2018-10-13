@@ -89,3 +89,55 @@ describe('total likes', () => {
   })
 })
 
+
+describe('favorite blog', () => {
+  const listWithOneBlog = [
+    {
+      _id: '5a422aa71b54a676234d17f8',
+      title: 'Go To Statement Considered Harmful',
+      author: 'Edsger W. Dijkstra',
+      url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
+      likes: 5,
+      __v: 0
+    }
+  ]
+
+  test('when list has only one blog equals the likes of that', () => {
+    const result = listHelper.favoriteBlog(listWithOneBlog)
+    expect(result).toEqual({
+      title: 'Go To Statement Considered Harmful',
+      author: 'Edsger W. Dijkstra',
+      likes: 5
+    })
+  })
+  test('a bigger list returns correct value', () => {
+    const result = listHelper.favoriteBlog(blogs)
+    expect(result).toEqual({
+      title: 'Canonical string reduction',
+      author: 'Edsger W. Dijkstra',
+      likes: 12
+    })
+  })
+  test('empty list returns undefined', () => {
+    const result = listHelper.favoriteBlog([])
+    expect(result).toBeUndefined()
+  })
+  test('no argument returns undefined', () => {
+    const result = listHelper.favoriteBlog()
+    expect(result).toBeUndefined()
+  })
+
+  const additional = blogs.concat({
+    title: 'Type wars',
+    author: 'Robert C. Martin',
+    likes: 2,
+  })
+  test('equal likes return the first occurance', () => {
+    const result = listHelper.favoriteBlog(additional)
+    expect(result).toEqual({
+      title: 'Canonical string reduction',
+      author: 'Edsger W. Dijkstra',
+      likes: 12
+    })
+  })
+})
