@@ -4,18 +4,9 @@ const app = express()
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const mongoose = require('mongoose')
-const morgan = require('morgan')
+const middleware = require('./utils/middleware')
 
 const blogsRouter = require('./controllers/blogs')
-
-
-morgan.token('content', function (req) {
-  return JSON.stringify(req.body)
-})
-
-// Enable logging for requests
-app.use(morgan(':method :url :content :status :res[content-length] - :response-time ms'))
-
 
 if ( process.env.NODE_ENV !== 'production' ) {
   require('dotenv').config()
@@ -36,6 +27,8 @@ mongoose.connect(mongoUrl, { useNewUrlParser: true })
 app.use(cors())
 app.use(bodyParser.json())
 
+app.use(express.static('build'))
+app.use(middleware.logger)
 
 app.use('/api/blogs', blogsRouter)
 
