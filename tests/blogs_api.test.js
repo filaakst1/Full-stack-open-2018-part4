@@ -138,6 +138,22 @@ describe('when there is initially some blogs saved', async () => {
       newBlog.likes = 0
       expect(contents).toContainEqual(newBlog)
     })
+
+    test('blog without title is not added ', async () => {
+      const newNote = {
+        author: 'Foobar',
+        url: 'http://foobar.com/',
+        likes: 1
+      }
+      const intialNotes = await api.get('/api/blogs')
+      await api
+        .post('/api/blogs')
+        .send(newNote)
+        .expect(400)
+      const response = await api.get('/api/blogs')
+      expect(response.body.length).toBe(intialNotes.body.length)
+    })
+
   })
 
   afterAll(() => {
