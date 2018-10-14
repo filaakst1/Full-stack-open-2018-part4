@@ -154,6 +154,20 @@ describe('when there is initially some blogs saved', async () => {
       expect(response.body.length).toBe(intialNotes.body.length)
     })
 
+    test('blog without url is not added ', async () => {
+      const newNote = {
+        author: 'Foobar',
+        title: 'Hello World!',
+        likes: 1
+      }
+      const intialNotes = await api.get('/api/blogs')
+      await api
+        .post('/api/blogs')
+        .send(newNote)
+        .expect(400)
+      const response = await api.get('/api/blogs')
+      expect(response.body.length).toBe(intialNotes.body.length)
+    })
   })
 
   afterAll(() => {
