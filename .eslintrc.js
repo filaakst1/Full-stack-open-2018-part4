@@ -4,6 +4,9 @@ module.exports = {
         "node": true,
         "jest": true
     },
+    "parserOptions": {
+        "ecmaVersion": 2018
+    },
     "extends": "eslint:recommended",
     "rules": {
         "indent": [
