@@ -43,47 +43,76 @@ const initialBlogs = [
   }
 ]
 
-
-beforeAll(async () => {
-  await Blog.remove({})
-  const blogObjects = initialBlogs.map(blog => new Blog(blog))
-  const promiseArray = blogObjects.map(blog => blog.save())
-  await Promise.all(promiseArray)
-})
-
-
-test('blogs are returned as json', async () => {
-  await api
-    .get('/api/blogs')
-    .expect(200)
-    .expect('Content-Type', /application\/json/)
-})
-
-test('there are six blogs', async () => {
-  const response = await api.get('/api/blogs')
-  expect(response.body.length).toBe(initialBlogs.length)
-})
-
-test('the first blog is about HTTP methods', async () => {
-  const expected= {
-    title: 'First class tests',
-    author: 'Robert C. Martin',
-    url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
-    likes: 10
-  }
-  const response = await api.get('/api/blogs')
-  const contents = response.body.map(blog => {
-    return {
-      title: blog.title,
-      author: blog.author,
-      url: blog.url,
-      likes: blog.likes
-    }
+describe('when there is initially some blogs saved', async () => {
+  beforeAll(async () => {
+    await Blog.remove({})
+    const blogObjects = initialBlogs.map(blog => new Blog(blog))
+    const promiseArray = blogObjects.map(blog => blog.save())
+    await Promise.all(promiseArray)
   })
-  expect(contents).toContainEqual(expected)
-})
 
+  describe('get request to /api/blogs for all blogs', async () => {
+    test('blogs are returned as json', async () => {
+      await api
+        .get('/api/blogs')
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+    })
 
-afterAll(() => {
-  server.close()
+    test('there are six blogs', async () => {
+      const response = await api.get('/api/blogs')
+      expect(response.body.length).toBe(initialBlogs.length)
+    })
+
+    test('the first blog is about HTTP methods', async () => {
+      const expected= {
+        title: 'First class tests',
+        author: 'Robert C. Martin',
+        url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
+        likes: 10
+      }
+      const response = await api.get('/api/blogs')
+      const contents = response.body.map(blog => {
+        return {
+          title: blog.title,
+          author: blog.author,
+          url: blog.url,
+          likes: blog.likes
+        }
+      })
+      expect(contents).toContainEqual(expected)
+    })
+  })
+
+  describe('post request to /api/blogs for adding entry', async() => {
+    test('POST /api/blogs with valid data', async () => {
+      const newBlog = {
+        title: 'Hello World!',
+        author: 'Foobar',
+        url: 'http://foobar.com/',
+        likes: 1
+      }
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      const response = await api.get('/api/blogs')
+      const contents = response.body.map(blog => {
+        return {
+          title: blog.title,
+          author: blog.author,
+          url: blog.url,
+          likes: blog.likes
+        }
+      })
+      expect(response.body.length).toBe(initialBlogs.length + 1)
+      expect(contents).toContainEqual(newBlog)
+    })
+
+  })
+  afterAll(() => {
+    server.close()
+  })
 })
