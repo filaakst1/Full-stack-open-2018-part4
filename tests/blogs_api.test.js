@@ -92,6 +92,7 @@ describe('when there is initially some blogs saved', async () => {
         url: 'http://foobar.com/',
         likes: 1
       }
+      const allInitialBlogs = await api.get('/api/blogs')
       await api
         .post('/api/blogs')
         .send(newBlog)
@@ -107,15 +108,35 @@ describe('when there is initially some blogs saved', async () => {
           likes: blog.likes
         }
       })
-      expect(response.body.length).toBe(initialBlogs.length + 1)
+      expect(response.body.length).toBe(allInitialBlogs.body.length + 1)
       expect(contents).toContainEqual(newBlog)
     })
-    test('POST /api/blogs without body', async () => {
+
+    test('POST /api/blogs without likes', async () => {
+      const newBlog = {
+        title: 'Hello World2!',
+        author: 'Foobar',
+        url: 'http://foobar.com/',
+      }
+      const allInitialBlogs = await api.get('/api/blogs')
       await api
         .post('/api/blogs')
-        .send()
+        .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
+
+      const response = await api.get('/api/blogs')
+      const contents = response.body.map(blog => {
+        return {
+          title: blog.title,
+          author: blog.author,
+          url: blog.url,
+          likes: blog.likes
+        }
+      })
+      expect(response.body.length).toBe(allInitialBlogs.body.length + 1)
+      newBlog.likes = 0
+      expect(contents).toContainEqual(newBlog)
     })
   })
 

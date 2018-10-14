@@ -19,10 +19,12 @@ blogsRouter.get('/', async (request, response) => {
 blogsRouter.post('/', async (request, response) => {
   try {
     const body = request.body
-    if(body === undefined) {
-      return response.status(400).json({ error: 'request body missing' })
-    }
-    const blog = new Blog(request.body)
+    const blog = new Blog({
+      title: body.title,
+      author: body.author,
+      url: body.url,
+      likes: body.likes === undefined ? 0 : body.likes
+    })
     const savedBlog = await blog.save()
     response.status(201).json(formatBlog(savedBlog))
   }
