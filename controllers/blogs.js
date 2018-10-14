@@ -16,15 +16,20 @@ blogsRouter.get('/', async (request, response) => {
   response.json(blogs.map(formatBlog))
 })
 
-blogsRouter.post('/', (request, response) => {
-  const blog = new Blog(request.body)
-
-  blog
-    .save()
-    .then(formatBlog)
-    .then(formattedResult => {
-      response.status(201).json(formattedResult)
-    })
+blogsRouter.post('/', async (request, response) => {
+  try {
+    const body = request.body
+    if(body === undefined) {
+      return response.status(400).json({ error: 'request body missing' })
+    }
+    const blog = new Blog(request.body)
+    const savedBlog = await blog.save()
+    response.status(201).json(formatBlog(savedBlog))
+  }
+  catch(exception) {
+    console.error(exception)
+    response.status(500).json({ error: 'something went wrong...' })
+  }
 })
 
 module.exports = blogsRouter
