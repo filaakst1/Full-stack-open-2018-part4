@@ -110,8 +110,15 @@ describe('when there is initially some blogs saved', async () => {
       expect(response.body.length).toBe(initialBlogs.length + 1)
       expect(contents).toContainEqual(newBlog)
     })
-
+    test('POST /api/blogs without body', async () => {
+      await api
+        .post('/api/blogs')
+        .send()
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+    })
   })
+
   afterAll(() => {
     server.close()
   })
