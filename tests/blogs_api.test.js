@@ -3,8 +3,7 @@ const { app, server } = require('../index')
 const api = supertest(app)
 
 const Blog = require('../models/blog')
-//const helper= require('./test_helper')
-const { format, initialBlogs, blogsInDb,formatWithoutId } = require('./test_helper')
+const { format, initialBlogs, blogsInDb,formatWithoutIdAndLike } = require('./test_helper')
 
 
 describe('when there is initially some blogs saved', async () => {
@@ -23,7 +22,6 @@ describe('when there is initially some blogs saved', async () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
       expect(response.body.length).toBe(blogsInDataBase.length)
-
       const returnedContents = response.body.map(format)
       blogsInDataBase.map(format).forEach(blog => {
         expect(returnedContents).toContainEqual(blog)
@@ -43,9 +41,10 @@ describe('when there is initially some blogs saved', async () => {
       const blogsAfterOperation = await blogsInDb()
       expect(blogsAfterOperation.length).toBe(blogsAtStart.length + 1)
 
-      const formattedBlogs = blogsAfterOperation.map(formatWithoutId)
-      expect(formattedBlogs).toContainEqual(newBlog)
+      const formattedBlogs = blogsAfterOperation.map(formatWithoutIdAndLike)
+      expect(formattedBlogs).toContainEqual(formatWithoutIdAndLike(newBlog))
     }
+
     const testInvalidBlogEntry = async (newBlog) => {
       const blogsAtStart = await blogsInDb()
       await api
@@ -67,7 +66,7 @@ describe('when there is initially some blogs saved', async () => {
         url: 'http://foobar.com/',
         likes: 1
       }
-      testValidBlogEntry(newBlog)
+      await testValidBlogEntry(newBlog)
     })
 
     test('POST /api/blogs without likes', async () => {
@@ -76,7 +75,7 @@ describe('when there is initially some blogs saved', async () => {
         author: 'Foobar',
         url: 'http://foobar.com/',
       }
-      testValidBlogEntry(newBlog)
+      await testValidBlogEntry(newBlog)
     })
 
     test('POST /api/blogs without title should not be added ', async () => {
@@ -85,7 +84,7 @@ describe('when there is initially some blogs saved', async () => {
         url: 'http://foobar.com/',
         likes: 1
       }
-      testInvalidBlogEntry(newBlog)
+      await testInvalidBlogEntry(newBlog)
     })
 
     test('POST /api/blogs without url should not be added ', async () => {
@@ -94,10 +93,34 @@ describe('when there is initially some blogs saved', async () => {
         title: 'Hello World!',
         likes: 1
       }
-      testInvalidBlogEntry(newBlog)
+      await testInvalidBlogEntry(newBlog)
     })
   })
+  describe('DELETE /api/blogs/:id - delete entry', async() => {
+    let addedBlog
 
+    beforeAll(async () => {
+      addedBlog =new Blog({
+        title: 'Hello World!',
+        author: 'Foobar',
+        url: 'http://foobar.com/',
+        likes: 1
+      })
+      await addedBlog.save()
+    })
+
+    test('DELETE /api/blogs/:id succeeds with proper statuscode ', async () => {
+      const blogsAtStart = await blogsInDb()
+
+      await api
+        .delete(`/api/blogs/${addedBlog._id}`)
+        .expect(204)
+      const blogsAfterOperation = await blogsInDb()
+      const contents = blogsAfterOperation.map(format)
+      expect(contents).not.toContainEqual(addedBlog)
+      expect(blogsAfterOperation.length).toBe(blogsAtStart.length - 1)
+    })
+  })
   afterAll(() => {
     server.close()
   })

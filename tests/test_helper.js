@@ -48,20 +48,19 @@ const format = (blog) => {
     likes: blog.likes
   }
 }
-const formatWithoutId = (blog) => {
+const formatWithoutIdAndLike = (blog) => {
   return {
     title: blog.title,
     author: blog.author,
-    url: blog.url,
-    likes: blog.likes
+    url: blog.url
   }
 }
 const blogsInDb = async () => {
-  const notes = await Blog.find({})
-  return notes.map(format)
+  const blogs = await Blog.find({})
+  return blogs.map(format)
 }
 
 
 module.exports = {
-  initialBlogs, blogsInDb,format,formatWithoutId
+  initialBlogs, blogsInDb,format,formatWithoutIdAndLike
 }
