@@ -3,63 +3,71 @@ const { app, server } = require('../index')
 const api = supertest(app)
 
 const Blog = require('../models/blog')
-const helper= require('./test_helper')
-
+//const helper= require('./test_helper')
+const { format, initialBlogs, blogsInDb,formatWithoutId } = require('./test_helper')
 
 
 describe('when there is initially some blogs saved', async () => {
   beforeAll(async () => {
     await Blog.remove({})
-    const blogObjects = helper.initialBlogs.map(blog => new Blog(blog))
-    const promiseArray = blogObjects.map(blog => blog.save())
-    await Promise.all(promiseArray)
+    const blogObjects = initialBlogs.map(blog => new Blog(blog))
+    await Promise.all(blogObjects.map(blog => blog.save()))
   })
 
-  describe('get request to /api/blogs for all blogs', async () => {
+  describe('GET /api/blogs tests', async () => {
+
     test('blogs are returned as json', async () => {
-      await api
+      const blogsInDataBase =await blogsInDb()
+      const response = await api
         .get('/api/blogs')
         .expect(200)
         .expect('Content-Type', /application\/json/)
-    })
+      expect(response.body.length).toBe(blogsInDataBase.length)
 
-    test('there are six blogs', async () => {
-      const response =await helper.blogsInDb()
-      expect(response.length).toBe(helper.initialBlogs.length)
-    })
-
-    test('the first blog is about HTTP methods', async () => {
-      const expected= {
-        title: 'First class tests',
-        author: 'Robert C. Martin',
-        url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
-        likes: 10
-      }
-      const response = await helper.blogsInDb()
-      const contents = response.map(helper.format)
-      expect(contents).toContainEqual(expected)
+      const returnedContents = response.body.map(format)
+      blogsInDataBase.map(format).forEach(blog => {
+        expect(returnedContents).toContainEqual(blog)
+      })
     })
   })
 
-  describe('post request to /api/blogs for adding entry', async() => {
-    test('POST /api/blogs with valid data', async () => {
-      const newBlog = {
-        title: 'Hello World!',
-        author: 'Foobar',
-        url: 'http://foobar.com/',
-        likes: 1
-      }
-      const allInitialBlogs = await helper.blogsInDb()
+  describe('POST /api/blogs: add entry', async() => {
+    const testValidBlogEntry = async (newBlog) => {
+      const blogsAtStart = await blogsInDb()
       await api
         .post('/api/blogs')
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
-      const response = await helper.blogsInDb()
-      const contents = response.map(helper.format)
-      expect(response.length).toBe(allInitialBlogs.length + 1)
-      expect(contents).toContainEqual(newBlog)
+      const blogsAfterOperation = await blogsInDb()
+      expect(blogsAfterOperation.length).toBe(blogsAtStart.length + 1)
+
+      const formattedBlogs = blogsAfterOperation.map(formatWithoutId)
+      expect(formattedBlogs).toContainEqual(newBlog)
+    }
+    const testInvalidBlogEntry = async (newBlog) => {
+      const blogsAtStart = await blogsInDb()
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(400)
+      const blogsAfterOperation = await blogsInDb()
+      expect(blogsAfterOperation.length).toBe(blogsAtStart.length)
+      blogsAtStart.forEach(blog => {
+        expect(blogsAtStart).toContainEqual(blog)
+      })
+    }
+
+    test('POST /api/blogs succeeds with valid data', async () => {
+
+      const newBlog = {
+        title: 'Hello World!',
+        author: 'Foobar',
+        url: 'http://foobar.com/',
+        likes: 1
+      }
+      testValidBlogEntry(newBlog)
     })
 
     test('POST /api/blogs without likes', async () => {
@@ -68,48 +76,25 @@ describe('when there is initially some blogs saved', async () => {
         author: 'Foobar',
         url: 'http://foobar.com/',
       }
-      const allInitialBlogs = await helper.blogsInDb()
-      await api
-        .post('/api/blogs')
-        .send(newBlog)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-
-      const response = await helper.blogsInDb()
-      const contents = response.map(helper.format)
-      expect(response.length).toBe(allInitialBlogs.length + 1)
-      newBlog.likes = 0
-      expect(contents).toContainEqual(newBlog)
+      testValidBlogEntry(newBlog)
     })
 
-    test('blog without title is not added ', async () => {
-      const newNote = {
+    test('POST /api/blogs without title should not be added ', async () => {
+      const newBlog = {
         author: 'Foobar',
         url: 'http://foobar.com/',
         likes: 1
       }
-      const intialNotes = await helper.blogsInDb()
-      await api
-        .post('/api/blogs')
-        .send(newNote)
-        .expect(400)
-      const response = await helper.blogsInDb()
-      expect(response.length).toBe(intialNotes.length)
+      testInvalidBlogEntry(newBlog)
     })
 
-    test('blog without url is not added ', async () => {
-      const newNote = {
+    test('POST /api/blogs without url should not be added ', async () => {
+      const newBlog = {
         author: 'Foobar',
         title: 'Hello World!',
         likes: 1
       }
-      const intialNotes = await helper.blogsInDb()
-      await api
-        .post('/api/blogs')
-        .send(newNote)
-        .expect(400)
-      const response = await helper.blogsInDb()
-      expect(response.length).toBe(intialNotes.length)
+      testInvalidBlogEntry(newBlog)
     })
   })
 
