@@ -3,50 +3,14 @@ const { app, server } = require('../index')
 const api = supertest(app)
 
 const Blog = require('../models/blog')
+const helper= require('./test_helper')
 
-const initialBlogs = [
-  {
-    title: 'React patterns',
-    author: 'Michael Chan',
-    url: 'https://reactpatterns.com/',
-    likes: 7
-  },
-  {
-    title: 'Go To Statement Considered Harmful',
-    author: 'Edsger W. Dijkstra',
-    url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
-    likes: 5
-  },
-  {
-    title: 'Canonical string reduction',
-    author: 'Edsger W. Dijkstra',
-    url: 'http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html',
-    likes: 12
-  },
-  {
-    title: 'First class tests',
-    author: 'Robert C. Martin',
-    url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
-    likes: 10
-  },
-  {
-    title: 'TDD harms architecture',
-    author: 'Robert C. Martin',
-    url: 'http://blog.cleancoder.com/uncle-bob/2017/03/03/TDD-Harms-Architecture.html',
-    likes: 0
-  },
-  {
-    title: 'Type wars',
-    author: 'Robert C. Martin',
-    url: 'http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html',
-    likes: 2
-  }
-]
+
 
 describe('when there is initially some blogs saved', async () => {
   beforeAll(async () => {
     await Blog.remove({})
-    const blogObjects = initialBlogs.map(blog => new Blog(blog))
+    const blogObjects = helper.initialBlogs.map(blog => new Blog(blog))
     const promiseArray = blogObjects.map(blog => blog.save())
     await Promise.all(promiseArray)
   })
@@ -60,8 +24,8 @@ describe('when there is initially some blogs saved', async () => {
     })
 
     test('there are six blogs', async () => {
-      const response = await api.get('/api/blogs')
-      expect(response.body.length).toBe(initialBlogs.length)
+      const response =await helper.blogsInDb()
+      expect(response.length).toBe(helper.initialBlogs.length)
     })
 
     test('the first blog is about HTTP methods', async () => {
@@ -71,15 +35,8 @@ describe('when there is initially some blogs saved', async () => {
         url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
         likes: 10
       }
-      const response = await api.get('/api/blogs')
-      const contents = response.body.map(blog => {
-        return {
-          title: blog.title,
-          author: blog.author,
-          url: blog.url,
-          likes: blog.likes
-        }
-      })
+      const response = await helper.blogsInDb()
+      const contents = response.map(helper.format)
       expect(contents).toContainEqual(expected)
     })
   })
@@ -92,23 +49,16 @@ describe('when there is initially some blogs saved', async () => {
         url: 'http://foobar.com/',
         likes: 1
       }
-      const allInitialBlogs = await api.get('/api/blogs')
+      const allInitialBlogs = await helper.blogsInDb()
       await api
         .post('/api/blogs')
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
-      const response = await api.get('/api/blogs')
-      const contents = response.body.map(blog => {
-        return {
-          title: blog.title,
-          author: blog.author,
-          url: blog.url,
-          likes: blog.likes
-        }
-      })
-      expect(response.body.length).toBe(allInitialBlogs.body.length + 1)
+      const response = await helper.blogsInDb()
+      const contents = response.map(helper.format)
+      expect(response.length).toBe(allInitialBlogs.length + 1)
       expect(contents).toContainEqual(newBlog)
     })
 
@@ -118,23 +68,16 @@ describe('when there is initially some blogs saved', async () => {
         author: 'Foobar',
         url: 'http://foobar.com/',
       }
-      const allInitialBlogs = await api.get('/api/blogs')
+      const allInitialBlogs = await helper.blogsInDb()
       await api
         .post('/api/blogs')
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
-      const response = await api.get('/api/blogs')
-      const contents = response.body.map(blog => {
-        return {
-          title: blog.title,
-          author: blog.author,
-          url: blog.url,
-          likes: blog.likes
-        }
-      })
-      expect(response.body.length).toBe(allInitialBlogs.body.length + 1)
+      const response = await helper.blogsInDb()
+      const contents = response.map(helper.format)
+      expect(response.length).toBe(allInitialBlogs.length + 1)
       newBlog.likes = 0
       expect(contents).toContainEqual(newBlog)
     })
@@ -145,13 +88,13 @@ describe('when there is initially some blogs saved', async () => {
         url: 'http://foobar.com/',
         likes: 1
       }
-      const intialNotes = await api.get('/api/blogs')
+      const intialNotes = await helper.blogsInDb()
       await api
         .post('/api/blogs')
         .send(newNote)
         .expect(400)
-      const response = await api.get('/api/blogs')
-      expect(response.body.length).toBe(intialNotes.body.length)
+      const response = await helper.blogsInDb()
+      expect(response.length).toBe(intialNotes.length)
     })
 
     test('blog without url is not added ', async () => {
@@ -160,13 +103,13 @@ describe('when there is initially some blogs saved', async () => {
         title: 'Hello World!',
         likes: 1
       }
-      const intialNotes = await api.get('/api/blogs')
+      const intialNotes = await helper.blogsInDb()
       await api
         .post('/api/blogs')
         .send(newNote)
         .expect(400)
-      const response = await api.get('/api/blogs')
-      expect(response.body.length).toBe(intialNotes.body.length)
+      const response = await helper.blogsInDb()
+      expect(response.length).toBe(intialNotes.length)
     })
   })
 
