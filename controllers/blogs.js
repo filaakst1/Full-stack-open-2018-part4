@@ -52,16 +52,26 @@ blogsRouter.delete('/:id',async (request, response) => {
 })
 blogsRouter.put('/:id', async (request, response) => {
   const body = request.body
-  if (body.likes === undefined) {
-    return response.status(400).json({ error: 'likes is missing' })
-  }
-  const blog = {
-    likes: body.likes
-  }
+  const blog = {}
 
+  if(body.title !== undefined) {
+    blog.title = body.title
+  }
+  if(body.title !== undefined) {
+    blog.title = body.title
+  }
+  if(body.author !== undefined) {
+    blog.author = body.author
+  }
+  if(body.url !== undefined) {
+    blog.url = body.url
+  }
+  if (body.likes !== undefined) {
+    blog.likes = body.likes
+  }
   try {
     const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true } )
-    response.status(200).json(updatedBlog)
+    response.status(200).json(formatBlog(updatedBlog))
   }
   catch(exception) {
     console.error(exception)

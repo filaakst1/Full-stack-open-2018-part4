@@ -3,7 +3,7 @@ const { app, server } = require('../index')
 const api = supertest(app)
 
 const Blog = require('../models/blog')
-const { format, initialBlogs, blogsInDb,formatWithoutIdAndLike } = require('./test_helper')
+const { format, formatWithoutId, initialBlogs, blogsInDb,blogsInDbUnformatted,formatWithoutIdAndLike } = require('./test_helper')
 
 
 describe('when there is initially some blogs saved', async () => {
@@ -121,6 +121,45 @@ describe('when there is initially some blogs saved', async () => {
       expect(blogsAfterOperation.length).toBe(blogsAtStart.length - 1)
     })
   })
+  describe('PUT /api/blogs/:id - update likes', async() => {
+
+    test('PUT /api/blogs/:id succeeds with valid request ', async () => {
+      const blogsAtStart = await blogsInDbUnformatted()
+
+      const blogAtStart = blogsAtStart[0]
+      const originalLikes = blogAtStart.likes
+      const updatedLikes = originalLikes +1
+      const response = await api
+        .put(`/api/blogs/${blogAtStart._id}`)
+        .send( {
+          likes: updatedLikes
+        })
+        .expect(200)
+      const blogsAfterOperation = await blogsInDb()
+      const formattedBlogsAterOperation = blogsAfterOperation.map(formatWithoutId)
+      expect(blogsAfterOperation.length).toBe(blogsAtStart.length)
+      expect(response.body.likes).toBe(updatedLikes)
+      expect(formattedBlogsAterOperation).not.toContainEqual(formatWithoutId(blogAtStart))
+      expect(formattedBlogsAterOperation).toContainEqual(formatWithoutId(response.body))
+    })
+
+
+    test('PUT /api/blogs/:id fails with invalid id', async () => {
+      const blogsAtStart = await blogsInDb()
+      await api
+        .put('/api/blogs/123456')
+        .send( {
+          likes: 0
+        })
+        .expect(400)
+      const blogsAfterOperation = await blogsInDb()
+      expect(blogsAfterOperation.length).toBe(blogsAtStart.length)
+      blogsAtStart.forEach(blog => {
+        expect(blogsAtStart).toContainEqual(blog)
+      })
+    })
+  })
+
   afterAll(() => {
     server.close()
   })
