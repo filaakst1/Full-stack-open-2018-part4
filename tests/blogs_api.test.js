@@ -161,7 +161,7 @@ describe('when there is initially some blogs saved', async () => {
     })
   })
 
-  describe.only('when there is initially one user at db', async () => {
+  describe('when there is initially one user at db', async () => {
     beforeAll(async () => {
       await User.remove({})
       const user = new User({ username: 'root', password: 'sekret', adult: true })
