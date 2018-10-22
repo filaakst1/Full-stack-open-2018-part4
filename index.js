@@ -11,13 +11,7 @@ const config = require('./utils/config')
 
 
 mongoose.connect(config.mongoUrl, { useNewUrlParser: true })
-  .then(() => {
-    console.log('Database connection established')
-  })
-  .catch( err => {
-    console.error(err)
-  })
-
+mongoose.Promise = global.Promise
 
 app.use(cors())
 app.use(bodyParser.json())
@@ -26,6 +20,7 @@ app.use(middleware.logger)
 
 app.use('/api/blogs', blogsRouter)
 app.use('/api/users', usersRouter)
+
 app.use(middleware.error)
 
 
