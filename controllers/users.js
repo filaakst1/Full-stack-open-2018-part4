@@ -19,6 +19,14 @@ usersRouter.get('/', async (request, response) => {
 usersRouter.post('/', async (request, response) => {
   try {
     const body = request.body
+
+    if (body.username === undefined) {
+      return response.status(400).json({ error: 'username is missing' })
+    }
+    const existingUser = await User.find({username: body.username })
+    if (existingUser.length>0) {
+      return response.status(400).json({ error: 'username must be unique' })
+    }
     const saltRounds = 10
     const passwordHash = await bcrypt.hash(body.password, saltRounds)
     const user = new User({
