@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/filaakst1/Full-stack-open-2018-part4#readme",
   "dependencies": {
+    "bcrypt": "^3.0.2",
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
     "dotenv": "^6.1.0",
