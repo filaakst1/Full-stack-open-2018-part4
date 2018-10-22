@@ -4,7 +4,7 @@ const api = supertest(app)
 
 const Blog = require('../models/blog')
 const User = require('../models/user')
-const { format, formatWithoutId, initialBlogs, blogsInDb,blogsInDbUnformatted,formatWithoutIdAndLike,usersInDb } = require('./test_helper')
+const { format, formatWithoutId, initialBlogs, blogsInDb,blogsInDbUnformatted,formatWithoutIdAndLike,usersInDb,formatUser } = require('./test_helper')
 
 
 describe('when there is initially some blogs saved', async () => {
@@ -168,6 +168,21 @@ describe('when there is initially some blogs saved', async () => {
       await user.save()
     })
 
+    test('users are returned as json', async () => {
+      const usersInDataBase =await usersInDb()
+      const response = await api
+        .get('/api/users')
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+      expect(response.body.length).toBe(usersInDataBase.length)
+
+      const returnedContents = response.body.map(u => u.username)
+
+      usersInDataBase.map(u => u.username).forEach(username => {
+        expect(returnedContents).toContainEqual(username)
+      })
+    })
+
     test('POST /api/users succeeds with a fresh username', async () => {
       const usersBeforeOperation = await usersInDb()
       const newUser = {
@@ -185,7 +200,7 @@ describe('when there is initially some blogs saved', async () => {
       const usersAfterOperation = await usersInDb()
       expect(usersAfterOperation.length).toBe(usersBeforeOperation.length+1)
       const usernames = usersAfterOperation.map(u => u.username)
-      expect(usernames).toContain(newUser.username)
+      expect(usernames).toContainEqual(newUser.username)
     })
 
   })
