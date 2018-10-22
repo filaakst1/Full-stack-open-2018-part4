@@ -74,7 +74,7 @@ blogsRouter.put('/:id', async (request, response) => {
     response.status(200).json(formatBlog(updatedBlog))
   }
   catch(exception) {
-    console.error(exception)
+    console.log(exception)
     response.status(400).send({ error: 'malformatted id' })
   }
 
