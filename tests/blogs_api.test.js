@@ -220,6 +220,57 @@ describe('when there is initially some blogs saved', async () => {
       expect(usersAfterOperation.length).toBe(usersBeforeOperation.length)
     })
 
+    test('POST /api/users fails with with password length less than 3', async () => {
+      const usersBeforeOperation = await usersInDb()
+      const newUser = {
+        username: 'new-user',
+        name: 'new user',
+        password: 'aa'
+      }
+      const result = await api
+        .post('/api/users')
+        .send(newUser)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+      expect(result.body).toEqual({ error: 'password too short' })
+      const usersAfterOperation = await usersInDb()
+      expect(usersAfterOperation.length).toBe(usersBeforeOperation.length)
+    })
+
+    test('POST /api/users fails with with password is undefined', async () => {
+      const usersBeforeOperation = await usersInDb()
+      const newUser = {
+        username: 'new-user',
+        name: 'new user',
+      }
+      const result = await api
+        .post('/api/users')
+        .send(newUser)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+      expect(result.body).toEqual({ error: 'password is missing' })
+      const usersAfterOperation = await usersInDb()
+      expect(usersAfterOperation.length).toBe(usersBeforeOperation.length)
+    })
+
+    test('POST /api/users defaults with adult if not set', async () => {
+      const usersBeforeOperation = await usersInDb()
+      const newUser = {
+        username: 'new-user',
+        name: 'new user',
+        password: 'verysecret'
+      }
+      const result = await api
+        .post('/api/users')
+        .send(newUser)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+      const usersAfterOperation = await usersInDb()
+      expect(usersAfterOperation.length).toBe(usersBeforeOperation.length+1)
+      expect(result.body.adult).toBe(true)
+    })
+
+
   })
 
 
