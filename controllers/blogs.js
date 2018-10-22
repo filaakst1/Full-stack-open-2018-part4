@@ -1,19 +1,9 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 
-// Output formatting
-const formatBlog = (blog) => {
-  return {
-    id: blog._id,
-    title: blog.title,
-    author: blog.author,
-    url: blog.url,
-    likes: blog.likes
-  }
-}
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({})
-  response.json(blogs.map(formatBlog))
+  response.json(blogs.map(Blog.format))
 })
 
 blogsRouter.post('/', async (request, response) => {
@@ -32,7 +22,7 @@ blogsRouter.post('/', async (request, response) => {
       return response.status(400).json({ error: 'url missing' })
     }
     const savedBlog = await blog.save()
-    response.status(201).json(formatBlog(savedBlog))
+    response.status(201).json(Blog.format(savedBlog))
   }
   catch(exception) {
     console.error(exception)
@@ -71,7 +61,7 @@ blogsRouter.put('/:id', async (request, response) => {
   }
   try {
     const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true } )
-    response.status(200).json(formatBlog(updatedBlog))
+    response.status(200).json(Blog.format(updatedBlog))
   }
   catch(exception) {
     console.log(exception)
