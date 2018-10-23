@@ -4,14 +4,28 @@ const api = supertest(app)
 
 const Blog = require('../models/blog')
 const User = require('../models/user')
-const { format, formatWithoutId, initialBlogs, blogsInDb,blogsInDbUnformatted,formatWithoutIdAndLike,usersInDb } = require('./test_helper')
+const { initialBlogs, initialUsers, blogsInDb,usersInDb } = require('./test_helper')
 
 
 describe('when there is initially some blogs saved', async () => {
   beforeAll(async () => {
+    await User.remove({})
     await Blog.remove({})
-    const blogObjects = initialBlogs.map(blog => new Blog(blog))
-    await Promise.all(blogObjects.map(blog => blog.save()))
+    const userObjects = initialUsers.map(user => new User(user))
+    await Promise.all(userObjects.map(user => user.save()))
+    const user = await User.findOne( { username: 'filaakst' })
+    const blogObjects = initialBlogs
+      .map(blog => {
+        blog.user = user
+        return blog
+      })
+      .map(blog => new Blog(blog))
+
+    const savedObjects = await Promise.all(blogObjects.map(blog => blog.save()))
+    savedObjects.forEach( obj => {
+      user.blogs = user.blogs.concat(obj._id)
+    })
+    await user.save()
   })
 
   describe('GET /api/blogs tests', async () => {
@@ -23,8 +37,8 @@ describe('when there is initially some blogs saved', async () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
       expect(response.body.length).toBe(blogsInDataBase.length)
-      const returnedContents = response.body.map(format)
-      blogsInDataBase.map(format).forEach(blog => {
+      const returnedContents = response.body.map(blog => blog.title)  
+      blogsInDataBase.map(blog => blog.title).forEach(blog => {
         expect(returnedContents).toContainEqual(blog)
       })
     })
@@ -33,7 +47,7 @@ describe('when there is initially some blogs saved', async () => {
   describe('POST /api/blogs: add entry', async() => {
     const testValidBlogEntry = async (newBlog) => {
       const blogsAtStart = await blogsInDb()
-      await api
+      const addedBlog = await api
         .post('/api/blogs')
         .send(newBlog)
         .expect(201)
@@ -41,9 +55,8 @@ describe('when there is initially some blogs saved', async () => {
 
       const blogsAfterOperation = await blogsInDb()
       expect(blogsAfterOperation.length).toBe(blogsAtStart.length + 1)
-
-      const formattedBlogs = blogsAfterOperation.map(formatWithoutIdAndLike)
-      expect(formattedBlogs).toContainEqual(formatWithoutIdAndLike(newBlog))
+      const formattedBlogs = blogsAfterOperation.map(blog => blog.title)
+      expect(formattedBlogs).toContainEqual(addedBlog.body.title)
     }
 
     const testInvalidBlogEntry = async (newBlog) => {
@@ -117,7 +130,7 @@ describe('when there is initially some blogs saved', async () => {
         .delete(`/api/blogs/${addedBlog._id}`)
         .expect(204)
       const blogsAfterOperation = await blogsInDb()
-      const contents = blogsAfterOperation.map(format)
+      const contents = blogsAfterOperation.map(Blog.format)
       expect(contents).not.toContainEqual(addedBlog)
       expect(blogsAfterOperation.length).toBe(blogsAtStart.length - 1)
     })
@@ -125,7 +138,7 @@ describe('when there is initially some blogs saved', async () => {
   describe('PUT /api/blogs/:id - update likes', async() => {
 
     test('PUT /api/blogs/:id succeeds with valid request ', async () => {
-      const blogsAtStart = await blogsInDbUnformatted()
+      const blogsAtStart = await blogsInDb()
 
       const blogAtStart = blogsAtStart[0]
       const originalLikes = blogAtStart.likes
@@ -137,6 +150,14 @@ describe('when there is initially some blogs saved', async () => {
         })
         .expect(200)
       const blogsAfterOperation = await blogsInDb()
+      const formatWithoutId = (blog) => {
+        return {
+          title: blog.title,
+          author: blog.author,
+          url: blog.url,
+          likes: blog.likes
+        }
+      }
       const formattedBlogsAterOperation = blogsAfterOperation.map(formatWithoutId)
       expect(blogsAfterOperation.length).toBe(blogsAtStart.length)
       expect(response.body.likes).toBe(updatedLikes)
@@ -162,11 +183,6 @@ describe('when there is initially some blogs saved', async () => {
   })
 
   describe('when there is initially one user at db', async () => {
-    beforeAll(async () => {
-      await User.remove({})
-      const user = new User({ username: 'root', password: 'sekret', adult: true })
-      await user.save()
-    })
 
     test('users are returned as json', async () => {
       const usersInDataBase =await usersInDb()
@@ -186,8 +202,8 @@ describe('when there is initially some blogs saved', async () => {
     test('POST /api/users succeeds with a fresh username', async () => {
       const usersBeforeOperation = await usersInDb()
       const newUser = {
-        username: 'filaakst',
-        name: 'Tomi Laakso',
+        username: 'test-user',
+        name: 'Test user',
         password: 'salainen',
         adult: true
       }
@@ -215,7 +231,7 @@ describe('when there is initially some blogs saved', async () => {
         .send(newUser)
         .expect(400)
         .expect('Content-Type', /application\/json/)
-      expect(result.body).toEqual({ error: 'username must be unique'})
+      expect(result.body).toEqual({ error: 'username must be unique' })
       const usersAfterOperation = await usersInDb()
       expect(usersAfterOperation.length).toBe(usersBeforeOperation.length)
     })

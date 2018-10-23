@@ -1,6 +1,17 @@
 const Blog = require('../models/blog')
 const User = require('../models/user')
-
+const initialUsers = [
+  {
+    username: 'filaakst',
+    name: 'Tomi Laakso',
+    adult: true
+  },
+  {
+    username: 'root',
+    password: 'sekret',
+    adult: true
+  }
+]
 const initialBlogs = [
   {
     title: 'React patterns',
@@ -39,42 +50,16 @@ const initialBlogs = [
     likes: 2
   }
 ]
-// Output formatting
-const format = (blog) => {
-  return {
-    id: blog._id,
-    title: blog.title,
-    author: blog.author,
-    url: blog.url,
-    likes: blog.likes
-  }
-}
-const formatWithoutId = (blog) => {
-  return {
-    title: blog.title,
-    author: blog.author,
-    url: blog.url,
-    likes: blog.likes
-  }
-}
-const formatWithoutIdAndLike = (blog) => {
-  return {
-    title: blog.title,
-    author: blog.author,
-    url: blog.url
-  }
-}
+
 const blogsInDb = async () => {
-  const blogs = await blogsInDbUnformatted()
-  return blogs.map(format)
-}
-const blogsInDbUnformatted = async () => {
-  return await Blog.find({})
+  const blogs = await Blog.find({})
+  return blogs.map(Blog.format)
 }
 const usersInDb = async () => {
-  return await User.find({})
+  const users = await User.find({})
+  return users.map(User.format)
 }
 
 module.exports = {
-  initialBlogs, blogsInDb,blogsInDbUnformatted,format,formatWithoutId,formatWithoutIdAndLike,usersInDb
+  initialUsers, initialBlogs, blogsInDb,usersInDb
 }

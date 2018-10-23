@@ -1,27 +1,40 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({})
+    .populate('user', { username: 1 })
   response.json(blogs.map(Blog.format))
 })
 
 blogsRouter.post('/', async (request, response) => {
   try {
     const body = request.body
-    const blog = new Blog({
-      title: body.title,
-      author: body.author,
-      url: body.url,
-      likes: body.likes === undefined ? 0 : body.likes
-    })
     if(body.title === undefined) {
       return response.status(400).json({ error: 'title missing' })
     }
     if(body.url === undefined) {
       return response.status(400).json({ error: 'url missing' })
     }
+    const userList = await User.find({})
+    if(userList.length < 1) {
+      return response.status(400).json({ error: 'No users' })
+    }
+    const user = userList[0]
+    const blog = new Blog({
+      title: body.title,
+      author: body.author,
+      url: body.url,
+      likes: body.likes === undefined ? 0 : body.likes,
+      user: user._id
+    })
+
     const savedBlog = await blog.save()
+    user.blogs = user.blogs.concat(savedBlog.id)
+
+    await user.save()
+
     response.status(201).json(Blog.format(savedBlog))
   }
   catch(exception) {
