@@ -4,15 +4,31 @@ const api = supertest(app)
 
 const Blog = require('../models/blog')
 const User = require('../models/user')
-const { initialBlogs, initialUsers, blogsInDb,usersInDb } = require('./test_helper')
+const { hashPasswd, initialBlogs, initialUsers, blogsInDb,usersInDb } = require('./test_helper')
 
 
 describe('when there is initially some blogs saved', async () => {
   beforeAll(async () => {
     await User.remove({})
     await Blog.remove({})
-    const userObjects = initialUsers.map(user => new User(user))
+
+    const usersInDataBase =await usersInDb()
+    const blogsInDataBase = await blogsInDb()
+    expect(usersInDataBase.length).toBe(0)
+    expect(blogsInDataBase.length).toBe(0)
+    const toDataBase= initialUsers.map(user => {
+      const hash= hashPasswd(user.password)
+      return {
+        username: user.username,
+        name: user.name,
+        adult: user.adult,
+        passwordHash: hash
+      }
+    })
+    const userObjects = toDataBase.map(user => new User(user))
     await Promise.all(userObjects.map(user => user.save()))
+    const usersInDataBaseAfterSave =await usersInDb()
+    expect(usersInDataBaseAfterSave.length).toBe(initialUsers.length)
     const user = await User.findOne( { username: 'filaakst' })
     const blogObjects = initialBlogs
       .map(blog => {
@@ -46,9 +62,19 @@ describe('when there is initially some blogs saved', async () => {
 
   describe('POST /api/blogs: add entry', async() => {
     const testValidBlogEntry = async (newBlog) => {
+      const login = await api
+        .post('/api/login')
+        .send({
+          username: 'root',
+          password: 'sekret'
+        })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+      const token = login.body.token
       const blogsAtStart = await blogsInDb()
       const addedBlog = await api
         .post('/api/blogs')
+        .set({ Authorization: 'bearer ' + token })
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -60,9 +86,19 @@ describe('when there is initially some blogs saved', async () => {
     }
 
     const testInvalidBlogEntry = async (newBlog) => {
+      const login = await api
+        .post('/api/login')
+        .send({
+          username: 'root',
+          password: 'sekret'
+        })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+      const token = login.body.token
       const blogsAtStart = await blogsInDb()
       await api
         .post('/api/blogs')
+        .set({ Authorization: 'bearer ' + token })
         .send(newBlog)
         .expect(400)
       const blogsAfterOperation = await blogsInDb()
