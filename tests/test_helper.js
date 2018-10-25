@@ -4,9 +4,7 @@ const bcrypt = require('bcrypt')
 
 
 const hashPasswd = (passwd) => {
- // var hash = bcrypt.hashSync(passwd, saltRounds);
   const saltRounds = 10
- // const hash= await bcrypt.hash(passwd, saltRounds)
   const hash = bcrypt.hashSync(passwd, saltRounds)
   return hash
 }
