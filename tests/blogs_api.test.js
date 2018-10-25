@@ -16,6 +16,7 @@ describe('when there is initially some blogs saved', async () => {
     const blogsInDataBase = await blogsInDb()
     expect(usersInDataBase.length).toBe(0)
     expect(blogsInDataBase.length).toBe(0)
+
     const toDataBase= initialUsers.map(user => {
       const hash= hashPasswd(user.password)
       return {
@@ -26,6 +27,7 @@ describe('when there is initially some blogs saved', async () => {
       }
     })
     const userObjects = toDataBase.map(user => new User(user))
+
     await Promise.all(userObjects.map(user => user.save()))
     const usersInDataBaseAfterSave =await usersInDb()
     expect(usersInDataBaseAfterSave.length).toBe(initialUsers.length)
@@ -53,7 +55,7 @@ describe('when there is initially some blogs saved', async () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
       expect(response.body.length).toBe(blogsInDataBase.length)
-      const returnedContents = response.body.map(blog => blog.title)  
+      const returnedContents = response.body.map(blog => blog.title)
       blogsInDataBase.map(blog => blog.title).forEach(blog => {
         expect(returnedContents).toContainEqual(blog)
       })
@@ -149,28 +151,68 @@ describe('when there is initially some blogs saved', async () => {
   describe('DELETE /api/blogs/:id - delete entry', async() => {
     let addedBlog
 
-    beforeAll(async () => {
+    beforeEach(async () => {
+      const user = await User.findOne( { username: 'filaakst' })
       addedBlog =new Blog({
-        title: 'Hello World!',
+        title: 'Hello World3!',
         author: 'Foobar',
         url: 'http://foobar.com/',
-        likes: 1
+        likes: 1,
+        user: user
       })
       await addedBlog.save()
     })
 
+    const getToken = async (username,password) => {
+      const response = await api
+        .post('/api/login')
+        .send({
+          username: username,
+          password: password
+        })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+      const token = response.body.token
+      return token
+    }
     test('DELETE /api/blogs/:id succeeds with proper statuscode ', async () => {
       const blogsAtStart = await blogsInDb()
-
+      const token = await getToken('filaakst', 'verysecret')
       await api
         .delete(`/api/blogs/${addedBlog._id}`)
+        .set({ Authorization: 'bearer ' + token })
         .expect(204)
       const blogsAfterOperation = await blogsInDb()
-      const contents = blogsAfterOperation.map(Blog.format)
-      expect(contents).not.toContainEqual(addedBlog)
+      const contents = blogsAfterOperation.map(blog => blog.title)
+      expect(contents).not.toContainEqual(addedBlog.title)
       expect(blogsAfterOperation.length).toBe(blogsAtStart.length - 1)
     })
+
+    test('DELETE /api/blogs/:id fails with wrong user ', async () => {
+      const blogsAtStart = await blogsInDb()
+      const token = await getToken('root', 'sekret')
+      await api
+        .delete(`/api/blogs/${addedBlog._id}`)
+        .set({ Authorization: 'bearer ' + token })
+        .expect(403)
+      const blogsAfterOperation = await blogsInDb()
+      const contents = blogsAfterOperation.map(blog => blog.title)
+      expect(contents).toContainEqual(addedBlog.title)
+      expect(blogsAfterOperation.length).toBe(blogsAtStart.length)
+    })
+    test('DELETE /api/blogs/:id fails with no authorization ', async () => {
+      const blogsAtStart = await blogsInDb()
+      await api
+        .delete(`/api/blogs/${addedBlog._id}`)
+        .expect(401)
+      const blogsAfterOperation = await blogsInDb()
+      const contents = blogsAfterOperation.map(blog => blog.title)
+      expect(contents).toContainEqual(addedBlog.title)
+      expect(blogsAfterOperation.length).toBe(blogsAtStart.length)
+    })
   })
+
+
   describe('PUT /api/blogs/:id - update likes', async() => {
 
     test('PUT /api/blogs/:id succeeds with valid request ', async () => {

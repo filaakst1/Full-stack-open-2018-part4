@@ -15,9 +15,11 @@ blogsRouter.post('/', async (request, response) => {
   const body = request.body
   try {
     const token = request.token
+    if (!token ){
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
     const decodedToken = jwt.verify(token, process.env.SECRET)
-
-    if (!token || !decodedToken.id) {
+    if (!decodedToken.id) {
       return response.status(401).json({ error: 'token missing or invalid' })
     }
     if(body.title === undefined) {
@@ -55,8 +57,21 @@ blogsRouter.post('/', async (request, response) => {
 
 blogsRouter.delete('/:id',async (request, response) => {
   try {
-    await Blog.findByIdAndRemove(request.params.id)
-    response.status(204).end()
+    const token = request.token
+    if (!token ){
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!decodedToken.id) {
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
+    const blog = await Blog.findById(request.params.id)
+    if(blog.user.toString() === decodedToken.id ) {
+      await Blog.findByIdAndRemove(request.params.id)
+      response.status(204).end()
+    }else {
+      response.status(403).json({ error: 'user not permitted to delete blog' })
+    }
   }catch(exception) {
     console.error(exception)
     response.status(400).send({ error: 'malformatted id' })
