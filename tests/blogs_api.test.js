@@ -4,18 +4,22 @@ const api = supertest(app)
 
 const Blog = require('../models/blog')
 const User = require('../models/user')
-const { hashPasswd, initialBlogs, initialUsers, blogsInDb,usersInDb } = require('./test_helper')
+const Comment = require('../models/comment')
+const { hashPasswd, initialBlogs, initialUsers, blogsInDb,usersInDb,commentsInDb } = require('./test_helper')
 
 
 describe('when there is initially some blogs saved', async () => {
   beforeAll(async () => {
+    await Comment.remove({})
     await User.remove({})
     await Blog.remove({})
-
     const usersInDataBase =await usersInDb()
     const blogsInDataBase = await blogsInDb()
+    const commentsInDataBase = await commentsInDb()
+
     expect(usersInDataBase.length).toBe(0)
     expect(blogsInDataBase.length).toBe(0)
+    expect(commentsInDataBase.length).toBe(0)
 
     const toDataBase= initialUsers.map(user => {
       const hash= hashPasswd(user.password)
@@ -26,9 +30,9 @@ describe('when there is initially some blogs saved', async () => {
         passwordHash: hash
       }
     })
-    const userObjects = toDataBase.map(user => new User(user))
 
-    await Promise.all(userObjects.map(user => user.save()))
+    const userObjects = toDataBase.map(u => new User(u))
+    await Promise.all(userObjects.map(u => u.save()))
     const usersInDataBaseAfterSave =await usersInDb()
     expect(usersInDataBaseAfterSave.length).toBe(initialUsers.length)
     const user = await User.findOne( { username: 'filaakst' })
@@ -146,6 +150,56 @@ describe('when there is initially some blogs saved', async () => {
         likes: 1
       }
       await testInvalidBlogEntry(newBlog)
+    })
+  })
+  describe('GET /api/blogs/:id/comments tests', async () => {
+
+    test('comments are returned as json', async () => {
+      const blog = await Blog.findOne( { title: 'First class tests' })
+      const commentsIn =await commentsInDb()
+      const response = await api
+        .get(`/api/blogs/${blog._id}/comments`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+      expect(response.body.length).toBe(commentsIn.length)
+      const returnedContents = response.body.map(comment => comment.comment)
+      commentsIn.map(comment => comment.comment).forEach(comment => {
+        expect(returnedContents).toContainEqual(comment)
+      })
+    }) })
+
+  describe('POST /api/blogs/:id/comments tests', async () => {
+    test('posting valid data', async () => {
+      const blog = await Blog.findOne( { title: 'First class tests' })
+      const commentsBeforeAll = blog.comments
+      const login = await api
+        .post('/api/login')
+        .send({
+          username: 'filaakst',
+          password: 'verysecret'
+        })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+      const token = login.body.token
+      const comment = {
+        blog: blog,
+        comment: 'Hello World!'
+      }
+      const addedComment = await api
+        .post(`/api/blogs/${blog._id}/comments`)
+        .set({ Authorization: 'bearer ' + token })
+        .send(comment)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      const blogAfterSave = await Blog.findOne( { title: 'First class tests' })
+      const commentsAfterSave = blogAfterSave.comments
+
+      expect(commentsAfterSave.length).toBe(commentsBeforeAll.length + 1)
+
+      const comments = commentsAfterSave.map(comment => comment.comment)
+      expect(comments).toContainEqual(addedComment.comment)
+
     })
   })
   describe('DELETE /api/blogs/:id - delete entry', async() => {

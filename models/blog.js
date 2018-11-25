@@ -5,7 +5,8 @@ const blogSchema = new mongoose.Schema({
   author: String,
   url: String,
   likes: Number,
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }]
 })
 
 blogSchema.statics.format = (blog) => {
@@ -15,7 +16,8 @@ blogSchema.statics.format = (blog) => {
     likes: blog.likes,
     author: blog.author,
     title: blog.title,
-    url: blog.url
+    url: blog.url,
+    comments: blog.comments === undefined ? [] : blog.comments
   }
 }
 
